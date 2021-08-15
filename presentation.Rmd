@@ -1,0 +1,12 @@
+---
+title: "TA presentation module"
+subtitle: "Confidence intervals"
+author: "Giuseppe Tinti Tomio"
+output:
+  xaringan::moon_reader:
+    self_contained: yes
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
