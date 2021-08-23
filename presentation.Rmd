@@ -1,12 +1,244 @@
 ---
-title: "TA presentation module"
-subtitle: "Confidence intervals"
+title: "Confidence interval interpretation"
 author: "Giuseppe Tinti Tomio"
 output:
-  xaringan::moon_reader:
-    self_contained: yes
-    nature:
-      highlightStyle: github
-      highlightLines: true
-      countIncrementalSlides: false
+    xaringan::moon_reader:
+        self_contained: yes
+        nature:
+            highlightStyle: github
+            highlightLines: true
+            countIncrementalSlides: false
 ---
+
+```{css css setup, echo = FALSE}
+orange {
+  color: #E69F00;
+}
+
+green {
+    color: #009E73;
+}
+
+blue {
+    color: #0072B2;
+}
+```
+
+```{r R setup, include = FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE,
+    fig.align = "center",
+    fig.retine = 3,
+    fig.height = 7,
+    fig.width = 10,
+    out.height = "100%"
+)
+
+library(tidyverse)
+
+POPULATION_SIZE <- 100
+TRUE_LOCATION <- 175
+TRUE_SCALE <- 8
+
+SEED <- 42
+EXPERIMENT_COUNT <- 1000
+CONFIDENCE_LEVEL <- 0.95
+
+RED <- scales::hue_pal()(2)[1]
+BLUE <- scales::hue_pal()(2)[2]
+BASE_SIZE <- 22
+
+plot_intervals <- function(
+    data,
+    count,
+    max_count = Inf
+) {
+    data <-
+        data %>%
+        filter(index <= max_count) %>%
+        mutate(lower_ci = if_else(index <= count, lower_ci, NA_real_)) %>%
+        mutate(upper_ci = if_else(index <= count, upper_ci, NA_real_))
+
+    color_values <- c(`TRUE` = BLUE, `FALSE` = RED)
+    y_limits <- c(TRUE_LOCATION - TRUE_SCALE, TRUE_LOCATION + TRUE_SCALE)
+
+    plot <-
+        data %>%
+        ggplot() +
+        geom_hline(yintercept = TRUE_LOCATION, size = 2, color = "black") +
+        geom_errorbar(aes(x = index, ymin = lower_ci, ymax = upper_ci, color = is_covering), width = 0, size = 2) +
+        scale_x_continuous(breaks = NULL) +
+        scale_color_manual(values = color_values, guide = "none") +
+        coord_cartesian(ylim = y_limits) +
+        base_theme() +
+        labs(
+            x = "Experiment",
+            y = "Height (cm)"
+        )
+
+    return(plot)
+}
+
+plot_convergence <- function(
+    data,
+    count,
+    max_count = Inf
+) {
+    data <-
+        data %>%
+        filter(index <= max_count) %>%
+        mutate(accumulated_coverage = if_else(index <= count, accumulated_coverage, NA_real_))
+
+    y_limits <- c(0.8, 1.0)
+
+    plot <-
+        data %>%
+        ggplot() +
+        geom_hline(yintercept = CONFIDENCE_LEVEL, size = 2, color = "black") +
+        geom_line(aes(x = index, y = accumulated_coverage), size = 2, color = BLUE) +
+        scale_x_continuous(breaks = NULL) +
+        scale_y_continuous(labels = scales::percent_format(1)) +
+        coord_cartesian(ylim = y_limits) +
+        base_theme() +
+        labs(
+            x = "Number of experiments",
+            y = "Proportion of covering intervals"
+        )
+
+    return(plot)
+}
+
+base_theme <- function(
+
+) {
+    theme_minimal(BASE_SIZE)
+}
+
+set.seed(SEED)
+```
+
+```{r reference setup, include = FALSE, cache = FALSE}
+library(RefManageR)
+
+BibOptions(
+    bib.style = "authoryear",
+    max.names = 1,
+    cite.style = "authoryear",
+    style = "markdown",
+    hyperlink = FALSE
+)
+
+bibliography <- ReadBib("./bibliography.bib")
+```
+
+```{r processing, include = FALSE}
+experiments <- tibble(
+    index = seq(EXPERIMENT_COUNT),
+    sample = replicate(EXPERIMENT_COUNT, list(rnorm(POPULATION_SIZE, TRUE_LOCATION,  TRUE_SCALE)))
+)
+
+experiments <-
+    experiments %>%
+    rowwise() %>%
+    mutate(location = mean(sample), scale = sd(sample)) %>%
+    ungroup() %>%
+    mutate(
+        lower_ci = location - qt(1 - (1 - CONFIDENCE_LEVEL) / 2, POPULATION_SIZE) * scale / sqrt(POPULATION_SIZE),
+        upper_ci = location + qt(1 - (1 - CONFIDENCE_LEVEL) / 2, POPULATION_SIZE) * scale / sqrt(POPULATION_SIZE)
+    ) %>%
+    mutate(is_covering = (lower_ci < TRUE_LOCATION) & (TRUE_LOCATION < upper_ci)) %>%
+    mutate(accumulated_coverage = cumsum(is_covering) / seq(is_covering))
+```
+
+# Introduction
+
+- Confidence intervals (CI) are very common in statistical analysis
+
+--
+
+- For instance, `r Citet(bibliography, "shields2011bias")` estimate that the average Canadian man is between 174cm and 175cm tall with a 95% confidence level
+
+--
+
+- Interpretation of CI is not so easy.
+
+---
+# Definition
+
+- **Rough definition:** A <orange>[L, U] confidence interval</orange> of <green>p% confidence level</green> for a <blue>unkown quantity q</blue> means that if a lot of scientists reproduced the same experiment, we would expected that <green>p%</green> of the <orange>calculated confidence intervals</orange> contained <blue>q</blue>
+
+--
+
+- **In practice:**
+
+    - <orange>Confidence intervals</orange> summarize <blue>parameter</blue> estimation, while taking into account the estimation uncertainty
+
+    - The bigger the <green>confidence level</green>, the more trustful they are
+
+--
+
+- **Example:** The <green>95%</green> <orange>confidence interval [174cm, 175cm]</orange> from `r Citet(bibliography, "shields2011bias")` gives a sense of values that the <blue>height of the average Canadian men</blue> could be
+
+--
+
+.footnote[Quick note: Technically, the confidence interval definition is only valid if your methodology is valid]
+
+---
+class: inverse, center, middle
+# Simulation
+
+---
+
+```{r confidence interval plot 0}
+experiments %>%
+    plot_intervals(0, max_count = 50)
+```
+
+---
+
+```{r confidence interval plot 1}
+experiments %>%
+    plot_intervals(1, max_count = 50)
+```
+
+---
+
+```{r confidence interval plot 2}
+experiments %>%
+    plot_intervals(2, max_count = 50)
+```
+
+---
+
+```{r confidence interval plot 3}
+experiments %>%
+    plot_intervals(3, max_count = 50)
+```
+
+---
+
+```{r confidence interval plot 10}
+experiments %>%
+    plot_intervals(10, max_count = 50)
+```
+
+---
+
+```{r confidence interval plot 50}
+experiments %>%
+    plot_intervals(50, max_count = 50)
+```
+
+---
+
+```{r convergence coverage plot inf}
+experiments %>%
+    plot_convergence(Inf)
+```
+
+---
+# Reference
+
+```{r references, echo = FALSE, results = "asis"}
+PrintBibliography(bibliography)
+```

@@ -1,0 +1,22 @@
+# Presentation
+
+Introduction:
+    - When reading an analysis it is very common to face confidence intervals
+    - For instance
+        - *Example, probably vaccine efficacy*
+    - But, unfortunately, it's interpretation is not so easy
+Definition:
+    - Rough definition:
+        - *Using colors* A reported [L, U] confidence interval of p% for a quantity q means that if a lot of scientists reproduced the same experiment, we would expected that p% of the calculated confidence intervals contained the true unknown quantity.
+    - Using the same example:
+        - *Definition applied to the example*
+Simulation:
+    - This is still pending more thoughts, maybe do a simulation showing
+References:
+    - Reference for example
+
+
+
+
+Thoughts:
+    - If time allows, add one more example
