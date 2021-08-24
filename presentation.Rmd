@@ -28,82 +28,99 @@ blue {
 knitr::opts_chunk$set(
     echo = FALSE,
     fig.align = "center",
-    fig.retine = 3,
     fig.height = 7,
     fig.width = 10,
     out.height = "100%"
 )
 
 library(tidyverse)
+library(xkcd)
 
-POPULATION_SIZE <- 100
-TRUE_LOCATION <- 175
-TRUE_SCALE <- 8
+POPULATION_SIZE <- 20
+TRUE_LOCATION <- 170
+TRUE_SCALE <- 10
 
 SEED <- 42
-EXPERIMENT_COUNT <- 1000
-CONFIDENCE_LEVEL <- 0.95
 
 RED <- scales::hue_pal()(2)[1]
 BLUE <- scales::hue_pal()(2)[2]
 BASE_SIZE <- 22
 
-plot_intervals <- function(
-    data,
-    count,
-    max_count = Inf
+generate_stickmen_data <- function(
+    column_count,
+    row_count,
+    height_location,
+    height_scale
 ) {
-    data <-
-        data %>%
-        filter(index <= max_count) %>%
-        mutate(lower_ci = if_else(index <= count, lower_ci, NA_real_)) %>%
-        mutate(upper_ci = if_else(index <= count, upper_ci, NA_real_))
+    total_count <- column_count * row_count
 
-    color_values <- c(`TRUE` = BLUE, `FALSE` = RED)
-    y_limits <- c(TRUE_LOCATION - TRUE_SCALE, TRUE_LOCATION + TRUE_SCALE)
+    x <- rep(seq(0, column_count - 1), times = row_count)
+    y <- - 3.5 * rep(seq(0, row_count - 1), each = column_count)
+    draw_height <- 1
+    xy_ratio <- diff(range(x)) / diff(range(y))
 
-    plot <-
-        data %>%
-        ggplot() +
-        geom_hline(yintercept = TRUE_LOCATION, size = 2, color = "black") +
-        geom_errorbar(aes(x = index, ymin = lower_ci, ymax = upper_ci, color = is_covering), width = 0, size = 2) +
-        scale_x_continuous(breaks = NULL) +
-        scale_color_manual(values = color_values, guide = "none") +
-        coord_cartesian(ylim = y_limits) +
-        base_theme() +
-        labs(
-            x = "Experiment",
-            y = "Height (cm)"
-        )
+    down <- - pi / 2
+    tilt <- pi / 12
+    left_tilted <- down + tilt
+    right_tilted <- down - tilt
 
-    return(plot)
+    is_selected <- FALSE
+    height <- exact_rnorm(total_count, height_location, height_scale)
+
+    data <- tibble(
+        x = x,
+        y = y,
+        draw_height = draw_height,
+        xy_ratio = xy_ratio,
+        spine_angle = down,
+        lefth_humerus_angle = left_tilted,
+        right_humerus_angle = right_tilted,
+        left_radius_angle = left_tilted,
+        right_radius_angle = right_tilted,
+        left_leg_angle = left_tilted,
+        right_leg_angle = right_tilted,
+        neck_angle = down,
+        is_selected = is_selected,
+        height = height
+    )
+
+    return(data)
 }
 
-plot_convergence <- function(
-    data,
+exact_rnorm <- function(
     count,
-    max_count = Inf
+    location,
+    scale
 ) {
-    data <-
-        data %>%
-        filter(index <= max_count) %>%
-        mutate(accumulated_coverage = if_else(index <= count, accumulated_coverage, NA_real_))
+    sample <- rnorm(count)
+    sample <- as.vector(scale(sample))
+    sample <- sample * scale + location
 
-    y_limits <- c(0.8, 1.0)
+    return(sample)
+}
 
+plot_stickmen <- function(
+    data
+) {
     plot <-
-        data %>%
         ggplot() +
-        geom_hline(yintercept = CONFIDENCE_LEVEL, size = 2, color = "black") +
-        geom_line(aes(x = index, y = accumulated_coverage), size = 2, color = BLUE) +
-        scale_x_continuous(breaks = NULL) +
-        scale_y_continuous(labels = scales::percent_format(1)) +
-        coord_cartesian(ylim = y_limits) +
-        base_theme() +
-        labs(
-            x = "Number of experiments",
-            y = "Proportion of covering intervals"
-        )
+        xkcdman(aes(
+            x = x,
+            y = y,
+            scale = draw_height,
+            ratioxy = xy_ratio,
+            angleofspine = spine_angle,
+            anglelefthumerus = lefth_humerus_angle,
+            anglerighthumerus = right_humerus_angle,
+            angleleftradius = left_radius_angle,
+            anglerightradius = right_radius_angle,
+            angleleftleg = left_leg_angle,
+            anglerightleg = right_leg_angle,
+            angleofneck = neck_angle,
+            color = is_selected
+        ), data) +
+        scale_color_manual(values = c(`TRUE` = RED, `FALSE` = BLUE), guide = "none") +
+        theme_void()
 
     return(plot)
 }
@@ -111,7 +128,7 @@ plot_convergence <- function(
 base_theme <- function(
 
 ) {
-    theme_minimal(BASE_SIZE)
+    return(theme_minimal(BASE_SIZE))
 }
 
 set.seed(SEED)
@@ -132,113 +149,9 @@ bibliography <- ReadBib("./bibliography.bib")
 ```
 
 ```{r processing, include = FALSE}
-experiments <- tibble(
-    index = seq(EXPERIMENT_COUNT),
-    sample = replicate(EXPERIMENT_COUNT, list(rnorm(POPULATION_SIZE, TRUE_LOCATION,  TRUE_SCALE)))
-)
-
-experiments <-
-    experiments %>%
-    rowwise() %>%
-    mutate(location = mean(sample), scale = sd(sample)) %>%
-    ungroup() %>%
-    mutate(
-        lower_ci = location - qt(1 - (1 - CONFIDENCE_LEVEL) / 2, POPULATION_SIZE) * scale / sqrt(POPULATION_SIZE),
-        upper_ci = location + qt(1 - (1 - CONFIDENCE_LEVEL) / 2, POPULATION_SIZE) * scale / sqrt(POPULATION_SIZE)
-    ) %>%
-    mutate(is_covering = (lower_ci < TRUE_LOCATION) & (TRUE_LOCATION < upper_ci)) %>%
-    mutate(accumulated_coverage = cumsum(is_covering) / seq(is_covering))
+stickmen_data <- generate_stickmen_data(5, 3, TRUE_LOCATION, TRUE_SCALE)
 ```
 
-# Introduction
-
-- Confidence intervals (CI) are very common in statistical analysis
-
---
-
-- For instance, `r Citet(bibliography, "shields2011bias")` estimate that the average Canadian man is between 174cm and 175cm tall with a 95% confidence level
-
---
-
-- Interpretation of CI is not so easy.
-
----
-# Definition
-
-- **Rough definition:** A <orange>[L, U] confidence interval</orange> of <green>p% confidence level</green> for a <blue>unkown quantity q</blue> means that if a lot of scientists reproduced the same experiment, we would expected that <green>p%</green> of the <orange>calculated confidence intervals</orange> contained <blue>q</blue>
-
---
-
-- **In practice:**
-
-    - <orange>Confidence intervals</orange> summarize <blue>parameter</blue> estimation, while taking into account the estimation uncertainty
-
-    - The bigger the <green>confidence level</green>, the more trustful they are
-
---
-
-- **Example:** The <green>95%</green> <orange>confidence interval [174cm, 175cm]</orange> from `r Citet(bibliography, "shields2011bias")` gives a sense of values that the <blue>height of the average Canadian men</blue> could be
-
---
-
-.footnote[Quick note: Technically, the confidence interval definition is only valid if your methodology is valid]
-
----
-class: inverse, center, middle
-# Simulation
-
----
-
-```{r confidence interval plot 0}
-experiments %>%
-    plot_intervals(0, max_count = 50)
-```
-
----
-
-```{r confidence interval plot 1}
-experiments %>%
-    plot_intervals(1, max_count = 50)
-```
-
----
-
-```{r confidence interval plot 2}
-experiments %>%
-    plot_intervals(2, max_count = 50)
-```
-
----
-
-```{r confidence interval plot 3}
-experiments %>%
-    plot_intervals(3, max_count = 50)
-```
-
----
-
-```{r confidence interval plot 10}
-experiments %>%
-    plot_intervals(10, max_count = 50)
-```
-
----
-
-```{r confidence interval plot 50}
-experiments %>%
-    plot_intervals(50, max_count = 50)
-```
-
----
-
-```{r convergence coverage plot inf}
-experiments %>%
-    plot_convergence(Inf)
-```
-
----
-# Reference
-
-```{r references, echo = FALSE, results = "asis"}
-PrintBibliography(bibliography)
+```{r plot}
+plot_stickmen(stickmen_data)
 ```
