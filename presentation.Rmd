@@ -24,6 +24,14 @@ output:
     font-size: 25px;
 }
 
+.left {
+    float : left;
+}
+
+.center {
+    float: center;
+}
+
 .right {
     float : right;
 }
@@ -230,6 +238,9 @@ BibOptions(
 Citet(bibliography, "shields2011bias")
 ```
 
+```{r processing, include = FALSE}
+```
+
 .pull-left-70[
 ```{r, fig.height = 8, fig.width = 6}
 plot_stickmen(
@@ -238,6 +249,10 @@ plot_stickmen(
     is_selected = FALSE
 )
 ```
+]
+
+.pull-right-30.big.center[
+Average height?
 ]
 
 ---
@@ -269,23 +284,6 @@ plot_stickmen(
 .pull-right-30.big[
 $$h = 170 \text{ cm}$$
 
-.orange[$$\widehat{\mu} = 178 \text{ cm}$$]
-]
-
----
-.pull-left-70[
-```{r, fig.height = 8, fig.width = 6}
-plot_stickmen(
-    column_count = COLUMN_COUNT,
-    row_count = ROW_COUNT,
-    is_selected = sample(c(rep(TRUE, times = 4), rep(FALSE, times = TOTAL_COUNT - 4)))
-)
-```
-]
-
-.pull-right-30.big[
-$$h = 170 \text{ cm}$$
-
 .orange[$$\widehat{\mu} = 163 \text{ cm}$$]
 ]
 
@@ -303,7 +301,7 @@ plot_stickmen(
 .pull-right-30.big[
 $$h = 170 \text{ cm}$$
 
-.orange[$$\widehat{\mu} = 180 \text{ cm}$$]
+.orange[$$\widehat{\mu} = 181 \text{ cm}$$]
 ]
 
 ---
@@ -320,7 +318,7 @@ plot_stickmen(
 .pull-right-30.big[
 $$h = 170 \text{ cm}$$
 
-.orange[$$\widehat{\mu} = 180 \text{ cm}$$]
+.orange[$$\widehat{\mu} = 181 \text{ cm}$$]
 
 .orange[$$\widehat{\sigma} = 10 \text{ cm}$$]
 ]
@@ -341,7 +339,7 @@ $$h = 170 \text{ cm}$$
 
 .orange[$$\widehat{\mu} = 163 \text{ cm}$$]
 
-.orange[$$\widehat{\sigma} = 11 \text{ cm}$$]
+.orange[$$\widehat{\sigma} = 12 \text{ cm}$$]
 ]
 
 ---
@@ -358,9 +356,13 @@ plot_stickmen(
 .pull-right-30.big[
 $$h = 170 \text{ cm}$$
 
-.orange[$$\widehat{\mu} = 178 \text{ cm}$$]
+.orange[$$\widehat{\mu} = 163 \text{ cm}$$]
 
-.orange[$$\widehat{\sigma} = 9 \text{ cm}$$]
+.orange[$$\widehat{\sigma} = 12 \text{ cm}$$]
+
+.orange[$$\text{CI} = [151 \text{ cm}, 176 \text{ cm}]$$]
+
+.orange[$$\text{CI} = [\widehat{\mu} - \widehat{\sigma},\, \widehat{\mu} + \widehat{\sigma}]$$]
 ]
 
 ---
@@ -418,17 +420,10 @@ plot_ci(0.50, EXPERIMENT_COUNT, POPULATION_SIZE, TRUE_LOCATION, TRUE_SCALE, SEED
 
 ---
 ```{r, fig.height = 8, fig.width = 12}
-plot_ci(0.80, EXPERIMENT_COUNT, POPULATION_SIZE, TRUE_LOCATION, TRUE_SCALE, SEED)
+plot_ci(0.90, EXPERIMENT_COUNT, POPULATION_SIZE, TRUE_LOCATION, TRUE_SCALE, SEED)
 ```
 
-.right.green[Confidence level `r scales::percent(0.80)`]
-
----
-```{r, fig.height = 8, fig.width = 12}
-plot_ci(0.95, EXPERIMENT_COUNT, POPULATION_SIZE, TRUE_LOCATION, TRUE_SCALE, SEED)
-```
-
-.right.green[Confidence level `r scales::percent(0.95)`]
+.right.green[Confidence level `r scales::percent(0.90)`]
 
 ---
 # Example
@@ -437,12 +432,18 @@ This:
 - `r Citet(bibliography, "shields2011bias")` report a 95% CI of [174cm, 175cm] for the height of the average Canadian man
 
 Means:
-- The average Canadian men is estimated to be between 174cm and 175cm tall.
+- The average Canadian men is estimated to be between 174cm and 175cm tall
 - We can be confident of this estimate, because if a lot of scientists replicated the experiment, we would expect 95% of them to be correct
 
 ---
-# Reference
+# Reference, code and others
+
+## Reference
 
 ```{r references, echo = FALSE, results = "asis"}
 PrintBibliography(bibliography)
 ```
+
+## Slide source code
+
+[github.com/GiuseppeTT/TA-presentation-module](https://github.com/GiuseppeTT/TA-presentation-module)
